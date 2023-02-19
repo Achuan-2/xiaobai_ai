@@ -1,5 +1,5 @@
 # 【README】小白也能听懂的人工智能原理
-我的GitHub项目存档：[machine_learning_record/Ele实验室_小白也能听懂的人工智能原理](https://github.com/Achuan-2/machine_learning_record/tree/main/Ele%E5%AE%9E%E9%AA%8C%E5%AE%A4_%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E5%90%AC%E6%87%82%E7%9A%84%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E5%8E%9F%E7%90%86)
+
 ## 课程简介
 
 【**课程来源**】：是B站的付费课程，地址见[这里](https://www.bilibili.com/cheese/play/ep6173?csource=Hp_searchresult)。主讲人是Up主【Ele实验室】。Ele实验室大概是回形针📎之后我在B站见过最用心做动画的硬核up主了，并且文案还总是带着一股浓浓的哲学思辨的味道，我是很喜欢的。
