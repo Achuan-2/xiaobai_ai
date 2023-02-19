@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>曲面</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				position: absolute;
+				color: #fff;
+				top: 0px;
+				width: 100%;
+				padding: 5px;
+				text-align:center;
+			}
+			.label {
+				color: #FFF;
+				font-family: sans-serif;
+				padding: 2px;
+				background: rgba( 0, 0, 0, .6 );
+			}
+			a {
+				color: #fff;
+			}
+		</style>
+
+	</head>
+	<body>
+
+		<div id="info">线性回归</div>
+
+
+
+		<script src="libs/three.min.js"></script>
+		<script src="threejslibs/controls/OrbitControls.js"></script>
+		<script src="threejslibs/QuickHull.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src="threejslibs/Detector.js"></script>
+		<script src="threejslibs/libs/stats.min.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src='threejslibs/lines/LineMaterial.js'></script>
+		<script src='threejslibs/lines/Line2.js'></script>
+		<script src='threejslibs/exporters/OBJExporter.js'></script>
+		<script src='threejslibs/renderers/CSS2DRenderer.js'></script>
+
+		<script type="text/javascript" src="libs/dat.gui.js"></script>
+
+
+
+		<script src='js/utils/FileSaver.js'></script>
+
+
+
+		<script src="jsmath/components/coordinate.js"></script>
+		<script src="jsmath/components/curve.js"></script>
+		<script src="jsmath/components/scatter.js"></script>
+
+		<script src="jsmath/func/funcs.js"></script>
+	
+
+		<script>
+
+			
+		
+			var coordinate2D,group, curve,camera, scene, renderer,labelRenderer;
+
+			var w11 = 0.1
+			var b11 = 0.1
+			var w12 = 0.1
+			var b12 = -2
+
+			var w21 = 1
+			var w22 = -1
+
+			var b2 = -1
+
+			init();
+			animate();
+
+			function resetCurve(){
+  				curve.setCurve(function(x){
+					var z11 = w11*x+b11
+					var z12 = w12*x+b12
+					var a11 = sigmoid(z11)
+					var a12 = sigmoid(z12)
+					var z2 = w21*a11+w22*a12+b2
+					var a2 = sigmoid(z2)
+
+				})
+  			}
+
+			function init() {
+
+
+
+
+				scene = new THREE.Scene();
+
+
+				//3d renderer
+				renderer = new THREE.WebGLRenderer( { antialias: true ,alpha:true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				//cc2drender
+				labelRenderer = new THREE.CSS2DRenderer();
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.domElement.style.position = 'absolute';
+				labelRenderer.domElement.style.top = '0px';
+				document.body.appendChild( labelRenderer.domElement );
+
+
+				// camera
+				coordinate2D = new Coordinate2D(scene,units=2)
+							.x("豆豆大小")
+							.y("毒性")
+
+				camera = coordinate2D.camera
+
+		
+				scene.add( new THREE.AmbientLight( 0x222222 ) );
+
+				// light
+
+				var light = new THREE.PointLight( 0xffffff, 1 );
+				camera.add( light );
+
+				curve = new Curve(scene,function(x){
+					return w*x+b
+					
+				})
+				.range(-0.1,2)
+				.show()
+
+				var vecs = []
+				for(var i=0;i<2;i=i+0.1){
+					var x = i
+					var y = 0.7*x+(0.5-Math.random())/5
+					var vec = new THREE.Vector2(x,y)
+					vecs.push(vec)
+
+				}
+
+				new Scatter(scene,vecs)
+				
+
+				var loader = new THREE.TextureLoader();
+				var texture = loader.load( 'textures/sprites/disc.png' );
+
+				group = new THREE.Group();
+				scene.add( group );
+
+				// points
+
+				var pointsGeometry = new THREE.DodecahedronGeometry( 10 );
+
+				for ( var i = 0; i < pointsGeometry.vertices.length; i ++ ) {
+
+					//pointsGeometry.vertices[ i ].add( randomPoint().multiplyScalar( 2 ) ); // wiggle the points
+
+				}
+
+				var pointsMaterial = new THREE.PointsMaterial( {
+
+					color: 0x0080ff,
+					map: texture,
+					size: 1,
+					alphaTest: 0.5
+
+				} );
+
+				var points = new THREE.Points( pointsGeometry, pointsMaterial );
+				group.add( points );
+
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				
+
+			}
+
+			function randomPoint() {
+
+				return new THREE.Vector3( THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ) );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				//group.rotation.y += 0.005;
+
+
+				labelRenderer.render( scene, camera );
+				render();
+
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+			function exportToObj() {
+
+				const exporter = new THREE.OBJExporter();
+				const result = exporter.parse( scene );
+				var file = new File([result], "test.txt", { type: "text/plain;charset=utf-8" })
+      			saveAs(file)
+				//floatingDiv.style.display = 'block';
+				//floatingDiv.innerHTML = result.split( '\n' ).join( '<br />' );
+
+			}
+			//exportToObj()
+
+			var Options = function() {
+			  this.功能 = '参数调节';
+			  this.w1 = 0.8;
+			  this.b1 = 0.8;
+			  this.w2 = 0.8;
+			  this.b2 = 0.8;
+
+			  this.显示网格 = false;
+			  this.button = function() {};
+			};
+
+			window.onload = function() {
+			  var options = new Options();
+			  var gui = new dat.GUI();
+
+			  gui.add(options, '功能');
+			  var w11Controller = gui.add(options, 'w11', -10, 10);
+			  var b11Controller = gui.add(options, 'b11', -10, 10);
+
+			  var w12Controller = gui.add(options, 'w12', -10, 10);
+			  var b12Controller = gui.add(options, 'b12', -10, 10);
+
+
+			  var w21Controller = gui.add(options, 'w21', -10, 10);
+			  var w22Controller = gui.add(options, 'w22', -10, 10);
+			  var b2Controller = gui.add(options, 'b2', -10, 10);
+
+			  w11Controller.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    w = value
+			    resetCurve()
+			    
+			  });
+
+			  b11Controller.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    b = value
+			    resetCurve()
+
+			    
+			  });
+			  w12Controller.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    w = value
+			    resetCurve()
+			    
+			  });
+
+			  b12Controller.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    b = value
+			    resetCurve()
+			  });
+
+
+
+			  w21Controller.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    b = value
+			    resetCurve()
+
+			    
+			  });
+			  w22Controller.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    w = value
+			    resetCurve()
+			    
+			  });
+
+			  b2Controller.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    b = value
+			    resetCurve()
+			  });
+			  var netController = gui.add(options, '显示网格');
+			  netController.onChange(function(value){
+			  		coordinate2D.showNet(value)
+
+			  })
+  			}
+
+  			
+
+		</script>
+
+		
+	</body>
+</html>

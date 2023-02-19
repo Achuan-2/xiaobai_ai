@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>e-w代价函数固定步长下降</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				position: absolute;
+				color: #fff;
+				top: 0px;
+				width: 100%;
+				padding: 5px;
+				text-align:center;
+			}
+			.label {
+				color: #FFF;
+				font-family: sans-serif;
+				padding: 2px;
+				background: rgba( 0, 0, 0, .6 );
+			}
+			a {
+				color: #fff;
+			}
+			@font-face {
+
+				font-family: '汉仪锦昌体简';
+
+				src: url('../fonts/汉仪锦昌体简.ttf');
+
+			}
+			div{
+				 font-family:'汉仪锦昌体简';
+			}
+		</style>
+
+	</head>
+	<body>
+
+		<div id="info">e-w代价函数固定步长下降</div>
+		<script src="libs/three.min.js"></script>
+		<script src="threejslibs/controls/OrbitControls.js"></script>
+		<script src="threejslibs/QuickHull.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src="threejslibs/Detector.js"></script>
+		<script src="threejslibs/libs/stats.min.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src='threejslibs/lines/LineMaterial.js'></script>
+		<script src='threejslibs/lines/Line2.js'></script>
+		<script src='threejslibs/exporters/OBJExporter.js'></script>
+		<script src='threejslibs/renderers/CSS2DRenderer.js'></script>
+		<script src="libs/dat.gui.js"></script>
+		<script src="jsmath/components/coordinate.js"></script>
+		<script src="jsmath/components/curve.js"></script>
+		<script src="jsmath/components/scatter.js"></script>
+		<script src="jsmath/func/funcs.js"></script>
+
+		<script>
+
+			var coordinate2D,group, curve,camera, scene, renderer,labelRenderer;
+			var w=0.1
+			var xs = []
+			var ys = []
+			var ball
+			var kLable;
+			var step = 0.01
+
+			init();
+			animate();
+
+			function func(w){
+				var sum_e = 0
+				for(var i=0;i<xs.length;i++){
+					var x = xs[i]
+					var y = ys[i]
+					var h = w*x
+					var e = Math.pow((h-y),2)
+					sum_e += e
+				}
+
+				sum_e = sum_e*1/(xs.length)
+				console.log(sum_e)
+				return {'y':sum_e,'z':0}
+
+			}
+
+			function calculateK(){
+				var a = 0
+				var b = 0
+				for(var i=0;i<xs.length;i++){
+					var x = xs[i]
+					var y = ys[i]
+					a+=x*x
+					b+=-2*x*y
+				}
+				a=a/xs.length
+				b=b/xs.length
+				return (2*a*w+b).toFixed(4)
+
+			}
+
+			function resetBall(){
+				ball.position.x=w;
+				ball.position.y = func(w)['y'];
+				kLable.position.set( ball.position.x+0.1, ball.position.y, ball.position.z );
+				kLable.element.innerText = "斜率:("+calculateK()+")";
+  			}
+
+			function init() {
+
+				scene = new THREE.Scene();
+
+				//3d renderer
+				renderer = new THREE.WebGLRenderer( { antialias: true ,alpha:true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				//cc2drender
+				labelRenderer = new THREE.CSS2DRenderer();
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.domElement.style.position = 'absolute';
+				labelRenderer.domElement.style.top = '0px';
+				document.body.appendChild( labelRenderer.domElement );
+
+
+				// camera
+				coordinate2D = new Coordinate2D(scene,units=2)
+							.x("w")
+							.y("e")
+							.show()
+
+
+				camera = coordinate2D.camera
+
+		
+				scene.add( new THREE.AmbientLight( 0x222222 ) );
+
+				// light
+
+				var light = new THREE.PointLight( 0xffffff, 1 );
+				camera.add( light );
+
+
+				
+				for(var i=0;i<2;i=i+0.1){
+					var x = i
+					var y = 1.2*x+(0.5-Math.random())/2
+					var vec = new THREE.Vector2(x,y)
+					xs.push(x)
+					ys.push(y)
+
+				}
+
+				curve = new Curve(scene,function(w){
+					return func(w)
+					
+				})
+				
+				.range(-0.1,2.1)
+				.show()
+
+				//new Scatter(scene,vecs)
+
+				var k = document.createElement( 'div' );
+				k.className = 'label';
+				k.textContent = "斜率："+calculateK();
+				k.style.marginLeft = '2.5em';
+				kLable = new THREE.CSS2DObject(k)
+				scene.add( kLable );
+
+				
+
+				
+				createBall()
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				
+
+			}
+
+			function randomPoint() {
+
+				return new THREE.Vector3( THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ) );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				//group.rotation.y += 0.005;
+
+
+				labelRenderer.render( scene, camera );
+				render();
+
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+			function createBall(){
+				ball = new THREE.Mesh(new THREE.SphereGeometry(0.03),
+					    new THREE.MeshBasicMaterial({
+					        color: 0xff0000,
+					        wireframe: false
+					    }))
+				ball.position.x=w;
+				ball.position.y = func(w)['y'];
+
+				scene.add(ball);
+
+				
+				resetBall()
+
+			}
+
+			var Options = function() {
+			  this.功能 = '参数调节';
+			  this.调整步长 = step;
+
+			  this.显示网格 = true;
+			  this.开始 = function() {
+  				gd()
+
+			  };
+			};
+
+			window.onload = function() {
+			  var options = new Options();
+			  var gui = new dat.GUI();
+
+			  gui.add(options, '功能');
+			  var wController = gui.add(options, '调整步长', 0.001, 1);
+			  gui.add(options, '开始');
+
+			  wController.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    step = value
+			    resetBall()
+			    
+			  });
+
+			  
+
+			  var netController = gui.add(options, '显示网格');
+			  netController.onChange(function(value){
+			  		coordinate2D.showNet(value)
+
+			  })
+  			}
+
+  			function gd(){
+  				var k = calculateK()
+  				if(k>0){
+  					w=w-step
+  				}else{
+  					w=w+step
+
+  				}
+  				resetBall()
+  				setTimeout(function () {
+				    gd();
+				}, 100)
+  			}
+
+  			
+
+		</script>
+
+		
+	</body>
+</html>

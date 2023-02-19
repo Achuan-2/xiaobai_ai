@@ -1,0 +1,28 @@
+*{
+  margin: 0;
+  padding: 0;
+}
+.scroll{
+  margin:100px;
+  width: 500px;
+  height: 5px;
+  background: #ccc;
+  position: relative;
+}
+.bar{
+  width: 10px;
+  height: 20px;
+  background: #369;
+  position: absolute;
+  top: -7px;
+  left: 0;
+  cursor: pointer;
+}
+.mask{
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: #369;
+  width: 0;
+  height: 5px;
+}

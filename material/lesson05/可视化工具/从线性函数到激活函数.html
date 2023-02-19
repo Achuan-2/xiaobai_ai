@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>激活函数的作用</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+
+	</head>
+	<body>
+
+
+		<div id="info">激活函数的作用</div>
+
+
+
+		<script src="libs/three.min.js"></script>
+		<script src="threejslibs/controls/OrbitControls.js"></script>
+		<script src="threejslibs/QuickHull.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src="threejslibs/Detector.js"></script>
+		<script src="threejslibs/libs/stats.min.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src='threejslibs/lines/LineMaterial.js'></script>
+		<script src='threejslibs/renderers/CSS2DRenderer.js'></script>
+
+		<script type="text/javascript" src="libs/dat.gui.js"></script>
+
+		<script src="jsmath/components/coordinate.js"></script>
+		<script src="jsmath/components/curve.js"></script>
+		<script src="jsmath/components/scatter.js"></script>
+
+		<script src="jsmath/func/funcs.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/styles.css">
+	
+
+		<script>
+
+			
+		
+			var renderer,group, curve,camera, scene, renderer,labelRenderer;
+			var w = 5
+			var b = -5
+
+			var coordinate2D
+			var lineCoordinate2D
+			var sigmoidCoordinate2D
+
+			var lineCurve,sigmoidCurve,xaCurve;
+
+			init();
+			animate();
+
+			function resetCurve(){
+				lineCurve.setCurve(function(x){
+  					return {'y':w*x+b,'z':0}
+					// a = sigmoid(w*x+b)*4
+					// return a
+				})
+
+				sigmoidCurve.setCurve(function(x){
+  					return {'y':sigmoid(x*10),'z':0}
+					// a = sigmoid(w*x+b)*4
+					// return a
+				})
+  				curve.setCurve(function(x){
+  					return {'y':sigmoid(w*x+b),'z':0}
+					// a = sigmoid(w*x+b)*4
+					// return a
+				})
+  			}
+
+			function init() {
+
+
+
+
+				scene = new THREE.Scene();
+
+
+				//3d renderer
+				renderer = new THREE.WebGLRenderer( { antialias: true ,alpha:true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				//cc2drender
+				labelRenderer = new THREE.CSS2DRenderer();
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.domElement.style.position = 'absolute';
+				labelRenderer.domElement.style.top = '0px';
+				document.body.appendChild( labelRenderer.domElement );
+
+
+				// camera
+				coordinate2D = new Coordinate2D(scene,units=2)
+							.x("x")
+							.y("a")
+							.setTitle("a=sigmoid(wx+b)")
+
+							.moveTo(new THREE.Vector3(3,0,0),new THREE.Vector3(3,0,0))
+
+							.show()
+
+				camera = coordinate2D.camera
+				var scale = 1.5
+				camera.left=camera.left*scale
+				camera.right=camera.right*scale
+				camera.top=camera.top*scale
+				camera.bottom=camera.bottom*scale
+
+				camera.updateProjectionMatrix();
+
+
+
+
+				lineCoordinate2D = new Coordinate2D(scene,units=2,camera)
+							.x("x")
+							.y("z")
+							.setTitle("z=wx+b")
+							.moveTo(new THREE.Vector3(-3,0,0),new THREE.Vector3(-3,0,0))
+							.show()
+
+				sigmoidCoordinate2D = new Coordinate2D(scene,units=5,camera)
+							.x("z")
+							.y("a")
+							.setTitle("a=sigmoid(z)")
+							.moveTo(new THREE.Vector3(0,0,0),new THREE.Vector3(1,0,0))
+							.show()
+							.showMarks(false)
+
+
+				
+				lineCurve = new Curve(scene)
+					.range(0,2)
+					.show(lineCoordinate2D)
+
+				sigmoidCurve = new Curve(scene)
+					.range(-1,1)
+					.show(sigmoidCoordinate2D)
+
+				curve = new Curve(scene)
+					.range(0,2)
+					.show(coordinate2D)
+				resetCurve()
+
+				var xs = []
+				var ys = []
+				var vecs = []
+				for(var i=0;i<2;i=i+0.1){
+					var x = i
+					var y = 0.7*x+(0.5-Math.random())/5
+					var vec = new THREE.Vector2(x,y)
+					vecs.push(vec)
+					xs.push(x)
+					ys.push(y>0.5?1:0)
+
+				}
+
+				//new Scatter(scene,vecs)
+				new Scatter(scene,xs,ys,size=0.02,coordinate2D)
+				
+
+				var loader = new THREE.TextureLoader();
+				var texture = loader.load( 'textures/sprites/disc.png' );
+
+				group = new THREE.Group();
+				scene.add( group );
+
+				// points
+
+				var pointsGeometry = new THREE.DodecahedronGeometry( 10 );
+
+				for ( var i = 0; i < pointsGeometry.vertices.length; i ++ ) {
+
+					//pointsGeometry.vertices[ i ].add( randomPoint().multiplyScalar( 2 ) ); // wiggle the points
+
+				}
+
+				var pointsMaterial = new THREE.PointsMaterial( {
+
+					color: 0x0080ff,
+					map: texture,
+					size: 1,
+					alphaTest: 0.5
+
+				} );
+
+				var points = new THREE.Points( pointsGeometry, pointsMaterial );
+				group.add( points );
+
+				// light
+				
+				scene.add( new THREE.AmbientLight( 0x222222 ) );
+
+
+				var light = new THREE.PointLight( 0xffffff, 1 );
+				camera.add( light );
+
+
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				
+
+			}
+
+			function randomPoint() {
+
+				return new THREE.Vector3( THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ) );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				//group.rotation.y += 0.005;
+
+				render();
+
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+				labelRenderer.render( scene, camera );
+
+
+			}
+			
+
+			var Options = function() {
+			  this.功能 = '参数调节';
+			  this.w = w;
+			  this.b = b;
+			  
+
+			  this.显示网格 = true;
+			  this.button = function() {};
+			};
+
+			window.onload = function() {
+			  var options = new Options();
+			  var gui = new dat.GUI();
+
+			  gui.add(options, '功能');
+			  var w11Controller = gui.add(options, 'w', -20, 20);
+			  var b11Controller = gui.add(options, 'b', -20, 20);
+
+
+			  w11Controller.onChange(function(value) {
+			    w = value
+			    resetCurve()
+			    
+			  });
+
+			  b11Controller.onChange(function(value) {
+			    b = value
+			    resetCurve()
+
+			    
+			  });
+			  
+			  var netController = gui.add(options, '显示网格');
+			  netController.onChange(function(value){
+			  		coordinate2D.showNet(value)
+			  		lineCoordinate2D.showNet(value)
+			  		sigmoidCoordinate2D.showNet(value)
+
+
+
+			  })
+  			}
+
+  			
+
+		</script>
+
+		
+	</body>
+</html>

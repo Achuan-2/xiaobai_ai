@@ -1,0 +1,2 @@
+用浏览器打开文件"Rosenblatt感知器.html"即可
+推荐使用chrome或者Edge浏览器

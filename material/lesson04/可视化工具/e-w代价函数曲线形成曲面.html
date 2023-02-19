@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>e-w代价函数形成的曲面</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				position: absolute;
+				color: #fff;
+				top: 0px;
+				width: 100%;
+				padding: 5px;
+				text-align:center;
+			}
+			.label {
+				color: #FFF;
+				font-family: sans-serif;
+				padding: 2px;
+				background: rgba( 0, 0, 0, .6 );
+			}
+			a {
+				color: #fff;
+			}
+		</style>
+
+	</head>
+	<body>
+
+		<div id="info">e-w代价函数形成的曲面</div>
+
+
+
+		<script src="libs/three.js"></script>
+		<script src="threejslibs/controls/OrbitControls.js"></script>
+		<script src="threejslibs/QuickHull.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src="threejslibs/Detector.js"></script>
+		<script src="threejslibs/libs/stats.min.js"></script>
+		<script src="threejslibs/geometries/ConvexGeometry.js"></script>
+		<script src='threejslibs/lines/LineMaterial.js'></script>
+		<script src='threejslibs/lines/Line2.js'></script>
+		<script src='threejslibs/exporters/OBJExporter.js'></script>
+		<script src='threejslibs/renderers/CSS2DRenderer.js'></script>
+
+
+		<script type="text/javascript" src="libs/dat.gui.js"></script>
+
+
+
+
+
+
+		<script src="jsmath/components/coordinate.js"></script>
+		<script src="jsmath/components/curve.js"></script>
+		<script src="jsmath/components/scatter.js"></script>
+
+		<script src="jsmath/func/funcs.js"></script>
+		
+		<script src="dataset/data_set.js"></script>
+		<link rel="stylesheet" type="text/css" href="../css/styles.css">
+
+
+
+	
+
+		<script>
+
+			
+		
+			var coordinate3D,group, curve,camera, scene, renderer,labelRenderer;
+			var vecs = get_beans();
+			var curves = []
+
+			var curveCounts = 10
+			var step = 0.1
+
+			init();
+			animate();
+
+			function calculate_sum_e(w,b){
+				var sum_e = 0
+				for(var i=0;i<vecs.length;i++){
+					var x = vecs[i]['x']
+					var y = vecs[i]['y']
+					var h = w*x+b
+					var e = Math.pow((h-y),2)
+					sum_e += e
+				}
+
+				sum_e = sum_e*1/(vecs.length)
+				return sum_e
+
+			}
+
+			
+
+			function init() {
+
+
+				scene = new THREE.Scene();
+
+
+				//3d renderer
+				renderer = new THREE.WebGLRenderer( { antialias: true ,alpha:true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				//cc2drender
+				labelRenderer = new THREE.CSS2DRenderer();
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.domElement.style.position = 'absolute';
+				labelRenderer.domElement.style.top = '0px';
+				document.body.appendChild( labelRenderer.domElement );
+
+
+				// camera
+				coordinate3D = new Coordinate3D(scene,units=2)
+								.x("w")
+								.y("e")
+								.z("b")
+				
+
+				camera = coordinate3D.camera
+				camera.position.set( 10, 10, 20 );
+				//camera.position.set( 1, 1, 20 );
+
+				camera.lookAt( new THREE.Vector3(1, 1, 0) );
+
+				// controls
+
+				var controls = new THREE.OrbitControls( camera, labelRenderer.domElement);
+				controls.minDistance = 2;
+				controls.maxDistance = 50;
+				controls.maxPolarAngle = Math.PI;
+
+		
+				scene.add( new THREE.AmbientLight( 0x222222 ) );
+
+				// light
+
+				var light = new THREE.PointLight( 0xffffff, 1 );
+				camera.add( light );
+
+
+				var loader = new THREE.TextureLoader();
+				var texture = loader.load( 'textures/sprites/disc.png' );
+
+				group = new THREE.Group();
+				scene.add( group );
+
+				// points
+
+				var pointsGeometry = new THREE.DodecahedronGeometry( 10 );
+
+				for ( var i = 0; i < pointsGeometry.vertices.length; i ++ ) {
+
+					//pointsGeometry.vertices[ i ].add( randomPoint().multiplyScalar( 2 ) ); // wiggle the points
+
+				}
+
+				var pointsMaterial = new THREE.PointsMaterial( {
+
+					color: 0x0080ff,
+					map: texture,
+					size: 1,
+					alphaTest: 0.5
+
+				} );
+
+				var points = new THREE.Points( pointsGeometry, pointsMaterial );
+				group.add( points );
+
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				
+
+			}
+
+			function randomPoint() {
+
+				return new THREE.Vector3( THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ), THREE.Math.randFloat( - 1, 1 ) );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				labelRenderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				//group.rotation.y += 0.005;
+
+
+				labelRenderer.render( scene, camera );
+				render();
+
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+			
+
+			var Options = function() {
+			  this.功能 = '参数调节';
+			  this.线条间隔 = step;
+
+
+			  this.显示网格 = false;
+			  this.button = function() {};
+			};
+
+			window.onload = function() {
+			  var options = new Options();
+			  var gui = new dat.GUI();
+
+			  gui.add(options, '功能');
+			  var stepController = gui.add(options, '线条间隔', 0.01, 1);
+
+
+			
+
+			  stepController.onChange(function(value) {
+			    console.log("onChange:" + value)
+			    step = value
+			    createCurves()
+			    
+			  });
+
+			 
+			  var netController = gui.add(options, '显示网格');
+			  netController.onChange(function(value){
+			  		coordinate3D.showNet(value)
+
+			  })
+  			}
+
+  		
+
+  			var _b=0
+  			var distance = 0.05
+  			function createCurves(){
+  				for(var i=0;i<curves.length;i++){
+  					curves[i].remove()
+
+  				}
+  				for(var _b=-2;_b<2;_b+=step){
+  					curve = new Curve(scene,function(w){
+						e = calculate_sum_e(w,_b)
+						return {'y':e,'z':_b}//func(w)
+					
+					})
+					.setColor(0x22ffff)
+					.range(-1,2)
+					.show()
+					curves.push(curve)
+				
+
+  				}
+		
+				
+				
+
+			}
+			createCurves()
+  			
+
+
+  			
+			function anim(){
+				rotateCamera(new THREE.Vector3(-10,5,20))
+				// camera.position.set(-10,5,20)
+				// camera.lookAt( new THREE.Vector3(1, 1, 0) );
+				setTimeout(function(){
+					anim()
+
+				},50);
+
+			}
+			
+			
+
+			
+
+
+  			
+
+		</script>
+
+		
+	</body>
+</html>
